@@ -42,7 +42,9 @@ namespace SecsDevice {
                         {
                             Msg = primaryMsg,
                             ReplyAction = replyAction
-                        }))));
+                        }))),
+                receiveBufferSize: 10
+            );
 
             _secsGem.ConnectionChanged += delegate
             {
