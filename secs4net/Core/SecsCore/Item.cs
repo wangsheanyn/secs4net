@@ -65,10 +65,7 @@ namespace Secs4Net
             Count = items.Count;
             Items = items;
             _sml = EmptySml;
-            _rawBytes = Lazy.Create(() => {
-                int _;
-                return new RawData(Format.EncodeItem(Count, out _));
-            });
+            _rawBytes = Lazy.Create(() => new RawData(Format.EncodeItem(Count).bytes));
         }
 
         /// <summary>
@@ -85,11 +82,10 @@ namespace Secs4Net
             _rawBytes = Lazy.Create(() => {
                 Array val = (Array)Value;
                 int bytelength = Buffer.ByteLength(val);
-                int headerLength;
-                byte[] result = Format.EncodeItem(bytelength, out headerLength);
-                Buffer.BlockCopy(val, 0, result, headerLength, bytelength);
-                result.Reverse(headerLength, headerLength + bytelength, bytelength / val.Length);
-                return new RawData(result);
+                var result = Format.EncodeItem(bytelength);
+                Buffer.BlockCopy(val, 0, result.bytes, result.headerLength, bytelength);
+                result.bytes.Reverse(result.headerLength, result.headerLength + bytelength, bytelength / val.Length);
+                return new RawData(result.bytes);
             });
         }
 
@@ -103,10 +99,9 @@ namespace Secs4Net
             _sml = Lazy.Create(value);
             _rawBytes = Lazy.Create(() => {
                 string str = (string)Value;
-                int headerLength;
-                byte[] result = Format.EncodeItem(str.Length, out headerLength);
-                encoder.GetBytes(str, 0, str.Length, result, headerLength);
-                return new RawData(result);
+                var result = Format.EncodeItem(str.Length);
+                encoder.GetBytes(str, 0, str.Length, result.bytes, result.headerLength);
+                return new RawData(result.bytes);
             });
         }
 

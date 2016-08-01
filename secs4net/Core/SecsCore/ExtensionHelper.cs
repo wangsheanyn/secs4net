@@ -87,33 +87,30 @@ namespace Secs4Net {
         /// <param name="headerlength">return header bytes length</param>
         /// <param name="format"></param>
         /// <returns>header bytes + initial bytes of value </returns>
-        internal static byte[] EncodeItem(this SecsFormat format, int valueCount, out int headerlength) {
+        internal static (byte[] bytes,int headerLength) EncodeItem(this SecsFormat format, int valueCount) {
             byte[] lengthBytes = BitConverter.GetBytes(valueCount);
             int dataLength = format == SecsFormat.List ? 0 : valueCount;
 
             if (valueCount <= 0xff) {//	1 byte
-                headerlength = 2;
                 var result = new byte[dataLength + 2];
-                result[0] = (byte)((byte)format | 1);
+                result[0] = (byte)((byte)format | 0b01);
                 result[1] = lengthBytes[0];
-                return result;
+                return (result,2);
             }
-            if (valueCount <= 0xffff) {//	2 byte
-                headerlength = 3;
+            if (valueCount <= 0xff_ff) {//	2 byte
                 var result = new byte[dataLength + 3];
-                result[0] = (byte)((byte)format | 2);
+                result[0] = (byte)((byte)format | 0b10);
                 result[1] = lengthBytes[1];
                 result[2] = lengthBytes[0];
-                return result;
+                return (result,3);
             }
-            if (valueCount <= 0xffffff) {//	3 byte
-                headerlength = 4;
+            if (valueCount <= 0xff_ff_ff) {//	3 byte
                 var result = new byte[dataLength + 4];
-                result[0] = (byte)((byte)format | 3);
+                result[0] = (byte)((byte)format | 0b11);
                 result[1] = lengthBytes[2];
                 result[2] = lengthBytes[1];
                 result[3] = lengthBytes[0];
-                return result;
+                return (result,4);
             }
             throw new ArgumentOutOfRangeException(nameof(valueCount), valueCount, $"Item data length({valueCount}) is overflow");
         }

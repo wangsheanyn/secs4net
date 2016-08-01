@@ -681,8 +681,8 @@ namespace Secs4Net
                         int need = CheckStillNeed(length, index, 1);
                         if ( need>0) return (2,need);
 
-                        _format = (SecsFormat)(data[index] & 0xFC);
-                        _lengthBits = (byte)(data[index] & 3);
+                        _format = (SecsFormat)(data[index] & 0b11111100);
+                        _lengthBits = (byte)(data[index] & 0b00000011);
                         index++;
                         _messageLength--;
                         return (3,need);
@@ -866,13 +866,13 @@ namespace Secs4Net
             }
             public bool ReplyExpected
             {
-                get { return (Bytes[2] & 0x80) == 0x80; }
-                set { Bytes[2] = (byte)(S | (value ? 0x80 : 0)); }
+                get { return (Bytes[2] & 0b1000_0000) == 0b1000_0000; }
+                set { Bytes[2] = (byte)(S | (value ? 0b1000_0000 : 0)); }
             }
             public byte S
             {
-                get { return (byte)(Bytes[2] & 0x7F); }
-                set { Bytes[2] = (byte)(value | (ReplyExpected ? 0x80 : 0)); }
+                get { return (byte)(Bytes[2] & 0b0111_1111); }
+                set { Bytes[2] = (byte)(value | (ReplyExpected ? 0b1000_0000 : 0)); }
             }
             public byte F
             {

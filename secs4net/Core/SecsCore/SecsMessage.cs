@@ -42,7 +42,7 @@ namespace Secs4Net {
         public SecsMessage(byte s, byte f, bool replyExpected = true, string name = null, Item item = null)
         {
             if (s > 0x7F)
-                throw new ArgumentOutOfRangeException(nameof(s), s, "Stream number must be less than 127");
+                throw new ArgumentOutOfRangeException(nameof(s), s, $"Stream number must be less than {0x7F}");
 
             S = s;
             F = f;
@@ -94,8 +94,8 @@ namespace Secs4Net {
         #endregion
 
         static Item Decode(byte[] bytes, ref int index) {
-            var format = (SecsFormat)(bytes[index] & 0xFC);
-            var lengthBits = (byte)(bytes[index] & 3);
+            var format = (SecsFormat)(bytes[index] & 0b1111_1100);
+            var lengthBits = (byte)(bytes[index] & 0b0000_0011);
             index++;
 
             var itemLengthBytes = new byte[4];
