@@ -32,11 +32,11 @@ namespace Secs4Net
             if (Value == null)
                 throw new InvalidOperationException("Item format is List");
 
-            if (Value is T)
-                return (T)((ICloneable)Value).Clone();
+            if (Value is ICloneable a)
+                return (T)a.Clone();
 
-            if (Value is T[])
-                return ((T[])Value)[0];
+            if (Value is T[] arr)
+                return arr[0];
 
             Type valueType = Nullable.GetUnderlyingType(typeof(T));
             if (valueType != null && Value.GetType().GetElementType() == valueType)

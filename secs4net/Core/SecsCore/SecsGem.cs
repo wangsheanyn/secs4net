@@ -208,8 +208,7 @@ namespace Secs4Net
             int systembyte = header.SystemBytes;
             if ((byte)header.MessageType % 2 == 0)
             {
-                SecsAsyncResult ar;
-                if (_replyExpectedMsgs.TryGetValue(systembyte, out ar))
+                if (_replyExpectedMsgs.TryGetValue(systembyte, out  var ar))
                 {
                     ar.EndProcess(ControlMessage, false);
                 }
@@ -304,8 +303,7 @@ namespace Secs4Net
             }
 
             // Secondary message
-            SecsAsyncResult ar;
-            if (_replyExpectedMsgs.TryGetValue(systembyte, out ar))
+            if (_replyExpectedMsgs.TryGetValue(systembyte, out var ar))
                 ar.EndProcess(msg, false);
             _tracer.TraceMessageIn(msg, systembyte);
         }
@@ -324,8 +322,7 @@ namespace Secs4Net
                 ThreadPool.RegisterWaitForSingleObject(ar.AsyncWaitHandle,
                     (state, timeout) =>
                     {
-                        SecsAsyncResult ars;
-                        if (_replyExpectedMsgs.TryRemove((int)state, out ars) && timeout)
+                        if (_replyExpectedMsgs.TryRemove((int)state, out var ars) && timeout)
                         {
                             _tracer.TraceError("T6 Timeout");
                             CommunicationStateChanging(ConnectionState.Retry);
@@ -371,17 +368,15 @@ namespace Secs4Net
                 ThreadPool.RegisterWaitForSingleObject(ar.AsyncWaitHandle,
                    (state, timeout) =>
                    {
-                       SecsAsyncResult ars;
-                       if (!_replyExpectedMsgs.TryRemove((int)state, out ars) || !timeout)
-                           return;
-                       _tracer.TraceError($"T3 Timeout[id=0x{state:X8}]");
-                       ars.EndProcess(null, true);
+                       if (timeout && _replyExpectedMsgs.TryRemove((int)state, out var ars))
+                       {
+                           _tracer.TraceError($"T3 Timeout[id=0x{state:X8}]");
+                           ars.EndProcess(null, true);
+                       }
                    }, systembyte, T3, true);
             }
 
-            SocketError error;
-            _socket.Send(buffer, SocketFlags.None, out error);
-            if (error != SocketError.Success)
+            if (_socket.Send(buffer, SocketFlags.None, out var error)<0 || error != SocketError.Success)
             {
                 var errorMsg = "Socket send error :" + new SocketException((int)error).Message;
                 _tracer.TraceError(errorMsg);
@@ -471,11 +466,13 @@ namespace Secs4Net
         {
             if (asyncResult == null)
                 throw new ArgumentNullException(nameof(asyncResult));
-            var ar = asyncResult as SecsAsyncResult;
-            if (ar == null)
-                throw new ArgumentException($"argument {nameof(asyncResult)} was not created by a call to {nameof(BeginSend)}", nameof(asyncResult));
-            ar.AsyncWaitHandle.WaitOne();
-            return ar.Secondary;
+            if (asyncResult is SecsAsyncResult ar)
+            {
+                ar.AsyncWaitHandle.WaitOne();
+                return ar.Secondary;
+            }
+
+            throw new ArgumentException($"argument {nameof(asyncResult)} was not created by a call to {nameof(BeginSend)}", nameof(asyncResult));
         }
 
         volatile bool _isDisposed;
